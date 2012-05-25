@@ -1,3 +1,8 @@
+*.gem
+*.swp
+.bundle
+Gemfile.lock
+pkg/*
 *.rbc
 *.sassc
 .sass-cache
