@@ -162,11 +162,11 @@ module FluidFeatures
         end
         post.body = JSON.dump(payload)
         res = @@http.request uri, post
-        if res.is_a?(Net::HTTPSuccess)
+        unless res.is_a?(Net::HTTPSuccess)
           ::Rails.logger.error "[" + res.code.to_s + "] Failed to log features hit : " + uri.to_s + " : " + res.body.to_s
         end
       rescue Net::HTTP::Persistent::Error
-        ::Rails.logger.error "Request to get user features failed : " + uri.to_s
+        ::Rails.logger.error "Request to log user features hit failed : " + uri.to_s
       end
     end
     
