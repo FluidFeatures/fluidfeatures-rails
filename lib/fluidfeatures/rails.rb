@@ -14,7 +14,7 @@ require 'net/http/persistent'
 end
 
 module FluidFeatures
-  class Rails
+  module Rails
     
     #
     # This is called once, when your Rails application fires up.
