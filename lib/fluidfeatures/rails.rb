@@ -1,7 +1,7 @@
 
 require 'rails'
 require 'net/http'
-require 'net/http/persistent'
+require 'persistent_http'
 
 #
 # Without these FluidFeatures credentials we cannot talk to
@@ -27,8 +27,14 @@ module FluidFeatures
           @@baseuri = ENV["FLUIDFEATURES_BASEURI"]
           @@secret = ENV["FLUIDFEATURES_SECRET"]
           @@app_id = ENV["FLUIDFEATURES_APPID"]
-          @@http = Net::HTTP::Persistent.new 'fluidfeatures'
-          @@http.headers['AUTHORIZATION'] = @@secret
+          @@http = PersistentHTTP.new(
+            :name         => 'fluidfeatures',
+            :logger       => ::Rails.logger,
+            :pool_size    => 10,
+            :warn_timeout => 0.25,
+            :force_retry  => true,
+            :url          => @@baseuri
+          )
           @@unknown_features = {}
           @@last_fetch_duration = nil
 
@@ -48,20 +54,21 @@ module FluidFeatures
     def self.feature_set_enabled_percent(feature_name, enabled_percent)
       begin
         uri = URI(@@baseuri + "/app/" + @@app_id.to_s + "/features/" + feature_name.to_s)
-        put = Net::HTTP::Put.new uri.path
-        put["Content-Type"] = "application/json"
-        put["Accept"] = "application/json"
+        request = Net::HTTP::Put.new uri.path
+        request["Content-Type"] = "application/json"
+        request["Accept"] = "application/json"
+        request['AUTHORIZATION'] = @@secret
         payload = {
           :enabled => {
             :percent => enabled_percent
           }
         }
-        put.body = JSON.dump(payload)
-        res = @@http.request uri, put
-        if res.is_a?(Net::HTTPSuccess)
-          ::Rails.logger.error "[" + res.code.to_s + "] Failed to set feature enabled percent : " + uri.to_s + " : " + res.body.to_s
+        request.body = JSON.dump(payload)
+        response = @@http.request uri, request
+        if response.is_a?(Net::HTTPSuccess)
+          ::Rails.logger.error "[" + response.code.to_s + "] Failed to set feature enabled percent : " + uri.to_s + " : " + response.body.to_s
         end
-      rescue Net::HTTP::Persistent::Error
+      rescue
         ::Rails.logger.error "Request to set feature enabled percent failed : " + uri.to_s
       end
     end
@@ -75,11 +82,14 @@ module FluidFeatures
       features = nil
       begin
         uri = URI(@@baseuri + "/app/" + @@app_id.to_s + "/features")
-        res = @@http.request uri
-        if res.is_a?(Net::HTTPSuccess)
-          features = JSON.parse(res.body)
+        request = Net::HTTP::Get.new uri.path
+        request["Accept"] = "application/json"
+        request['AUTHORIZATION'] = @@secret
+        response = @@http.request request
+        if response.is_a?(Net::HTTPSuccess)
+          features = JSON.parse(response.body)
         end
-      rescue Net::HTTP::Persistent::Error
+      rescue
         ::Rails.logger.error "Request failed when getting feature set from " + uri.to_s 
       end
       if not features
@@ -101,13 +111,16 @@ module FluidFeatures
       fetch_start_time = Time.now
       begin
         uri = URI(@@baseuri + "/app/" + @@app_id.to_s + "/user/" + user_id.to_s + "/features")
-        res = @@http.request uri
-        if res.is_a?(Net::HTTPSuccess)
-          features = JSON.parse(res.body)
+        request = Net::HTTP::Get.new uri.path
+        request["Accept"] = "application/json"
+        request['AUTHORIZATION'] = @@secret
+        response = @@http.request request
+        if response.is_a?(Net::HTTPSuccess)
+          features = JSON.parse(response.body)
         else
-          ::Rails.logger.error "[" + res.code.to_s + "] Failed to get user features : " + uri.to_s + " : " + res.body.to_s
+          ::Rails.logger.error "[" + response.code.to_s + "] Failed to get user features : " + uri.to_s + " : " + response.body.to_s
         end
-      rescue Net::HTTP::Persistent::Error
+      rescue
         ::Rails.logger.error "Request to get user features failed : " + uri.to_s
       end
       @@last_fetch_duration = Time.now - fetch_start_time
@@ -140,9 +153,10 @@ module FluidFeatures
     def self.log_features_hit(user_id, features_hit, request_duration)
       begin
         uri = URI(@@baseuri + "/app/" + @@app_id.to_s + "/user/" + user_id.to_s + "/features/hit")
-        post = Net::HTTP::Post.new uri.path
-        post["Content-Type"] = "application/json"
-        post["Accept"] = "application/json"
+        request = Net::HTTP::Post.new uri.path
+        request["Content-Type"] = "application/json"
+        request["Accept"] = "application/json"
+        request['AUTHORIZATION'] = @@secret
         payload = {
           :stats => {
             :fetch => {
@@ -160,12 +174,12 @@ module FluidFeatures
           payload[:features][:unknown] = @@unknown_features
           @@unknown_features = {}
         end
-        post.body = JSON.dump(payload)
-        res = @@http.request uri, post
-        unless res.is_a?(Net::HTTPSuccess)
-          ::Rails.logger.error "[" + res.code.to_s + "] Failed to log features hit : " + uri.to_s + " : " + res.body.to_s
+        request.body = JSON.dump(payload)
+        response = @@http.request uri, request
+        unless response.is_a?(Net::HTTPSuccess)
+          ::Rails.logger.error "[" + response.code.to_s + "] Failed to log features hit : " + uri.to_s + " : " + response.body.to_s
         end
-      rescue Net::HTTP::Persistent::Error
+      rescue
         ::Rails.logger.error "Request to log user features hit failed : " + uri.to_s
       end
     end

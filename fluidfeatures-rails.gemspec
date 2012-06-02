@@ -15,5 +15,5 @@ Gem::Specification.new do |s|
   #s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.require_paths = ["lib"]
   s.add_dependency "rails", "~>3.0"
-  s.add_dependency "net-http-persistent", "~>2.6"
+  s.add_dependency "persistent_http", "~>1.0.3"
 end
