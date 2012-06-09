@@ -70,6 +70,7 @@ module FluidFeatures
         end
       rescue
         ::Rails.logger.error "Request to set feature enabled percent failed : " + uri.to_s
+        raise
       end
     end
 
@@ -90,7 +91,8 @@ module FluidFeatures
           features = JSON.parse(response.body)
         end
       rescue
-        ::Rails.logger.error "Request failed when getting feature set from " + uri.to_s 
+        ::Rails.logger.error "Request failed when getting feature set from " + uri.to_s
+        raise
       end
       if not features
         ::Rails.logger.error "Empty feature set returned from " + uri.to_s
@@ -122,6 +124,7 @@ module FluidFeatures
         end
       rescue
         ::Rails.logger.error "Request to get user features failed : " + uri.to_s
+        raise
       end
       @@last_fetch_duration = Time.now - fetch_start_time
       features
@@ -175,12 +178,13 @@ module FluidFeatures
           @@unknown_features = {}
         end
         request.body = JSON.dump(payload)
-        response = @@http.request uri, request
+        response = @@http.request request
         unless response.is_a?(Net::HTTPSuccess)
           ::Rails.logger.error "[" + response.code.to_s + "] Failed to log features hit : " + uri.to_s + " : " + response.body.to_s
         end
-      rescue
+      rescue Exception => e
         ::Rails.logger.error "Request to log user features hit failed : " + uri.to_s
+        raise
       end
     end
     
