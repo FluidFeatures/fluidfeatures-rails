@@ -141,8 +141,11 @@ module FluidFeatures
     # planning to phase out and "false" for new feature that you
     # intend to phase in.
     #
-    def self.unknown_feature_hit(feature_name, default_enabled)
-      @@unknown_features[feature_name] = default_enabled
+    def self.unknown_feature_hit(feature_name, version_name, defaults)
+      if not @@unknown_features[feature_name]
+        @@unknown_features[feature_name] = { :versions => {} }
+      end
+      @@unknown_features[feature_name][:versions][version_name] = defaults
     end
     
     #
@@ -210,17 +213,32 @@ module ActionController
     # current user.
     # We call user_id to get the current user's unique id.
     #
-    def fluidfeature(feature_name, default_enabled=true)
+    def fluidfeature(feature_name, defaults={})
       @features_hit ||= []
       @features_hit << feature_name
-      enabled = default_enabled
+      global_defaults = fluidfeatures_defaults || {}
+      version = (defaults[:version] || global_defaults[:version]).to_s
       if not @features
         fluidfeatures_retrieve_user_features
       end
       if @features.has_key? feature_name
-        enabled = @features[feature_name]
-      else
-        FluidFeatures::Rails.unknown_feature_hit(feature_name, default_enabled)
+        if @features[feature_name].is_a? FalseClass or @features[feature_name].is_a? TrueClass
+          enabled = @features[feature_name]
+        elsif @features[feature_name].is_a? Hash
+          if @features[feature_name].has_key? version
+            enabled = @features[feature_name][version]
+          end
+        end
+      end
+      if enabled == nil
+        enabled = defaults[:enabled] || global_defaults[:enabled]
+        
+        # Tell FluidFeatures about this amazing new feature...
+        options = Hash.new(defaults)
+        options[:enabled] = enabled
+        options[:version] = version
+        ::Rails.logger.error "fluidfeature: #{feature_name.to_s} #{version}"
+        FluidFeatures::Rails.unknown_feature_hit(feature_name, version, options)
       end
       enabled
     end
@@ -253,6 +271,15 @@ module ActionController
         FluidFeatures::Rails.log_features_hit(@ff_user_id, @features_hit, request_duration)
       end
     end
+    
+    def fluidfeatures_defaults
+      # By default unknown features are disabled.
+      {
+        :enabled => false,
+        :version => 1
+      }
+    end
+
   end
 end
 
