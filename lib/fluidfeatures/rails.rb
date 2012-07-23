@@ -216,6 +216,9 @@ module ActionController
     def fluidfeature(feature_name, defaults={})
       @features_hit ||= []
       @features_hit << feature_name
+      if defaults === true or defaults === false
+        defaults = { :enabled => defaults }
+      end
       global_defaults = fluidfeatures_defaults || {}
       version = (defaults[:version] || global_defaults[:version]).to_s
       if not @features
@@ -230,7 +233,7 @@ module ActionController
           end
         end
       end
-      if enabled == nil
+      if enabled === nil
         enabled = defaults[:enabled] || global_defaults[:enabled]
         
         # Tell FluidFeatures about this amazing new feature...
