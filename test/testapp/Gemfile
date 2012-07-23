@@ -1,5 +1,6 @@
 source 'https://rubygems.org'
 
+gem 'rake'
 gem 'railties'
 gem 'tzinfo'
 gem 'fluidfeatures-rails', :path => '../..'
