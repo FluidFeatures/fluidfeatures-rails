@@ -6,5 +6,5 @@ gem 'tzinfo'
 gem 'fluidfeatures-rails', :path => '../..'
 gem "rspec-rails", "~> 2.0"
 gem "fakeweb"
-gem "yajl-ruby"
+gem "json_pure"
 gem "json_spec"

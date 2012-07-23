@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'fakeweb'
-require 'yajl'
+require 'json'
 require 'json_spec'
 
 describe HomeController do
@@ -11,12 +11,12 @@ describe HomeController do
       FakeWeb.register_uri(
         :get,
         File.join(ENV["FLUIDFEATURES_BASEURI"], "/app/123/user/1/features"),
-        :body => Yajl::Encoder.encode({}) # no features registered yet
+        :body => JSON.generate({}) # no features registered yet
       )
       FakeWeb.register_uri(
         :get,
         File.join(ENV["FLUIDFEATURES_BASEURI"], "/app/123/user/2/features"),
-        :body => Yajl::Encoder.encode({
+        :body => JSON.generate({
           :apples => false, 
           :oranges => true, 
           :lemons => true
