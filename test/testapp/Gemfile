@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
 
-gem 'rails', '3.2.3'
+gem 'railties'
+gem 'tzinfo'
 gem 'fluidfeatures-rails', :path => '../..'
 
 group :test do
