@@ -22,6 +22,13 @@ describe HomeController do
           :lemons => true
         })
       )
+      [1,2].each do |user_id|
+        FakeWeb.register_uri(
+          :post,
+          File.join(ENV["FLUIDFEATURES_BASEURI"], "/app/123/user/#{user_id.to_s}/features/hit"),
+          :body => ""
+        )
+      end
     end
 
     it 'should return only the default enabled features for user 1' do
