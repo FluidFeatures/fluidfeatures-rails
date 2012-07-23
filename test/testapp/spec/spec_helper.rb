@@ -1,6 +1,6 @@
 ENV["RAILS_ENV"] ||= 'test'
 
-ENV["FLUIDFEATURES_BASEURI"] ||= "http://local.fluidfeatures.com/service"
+ENV["FLUIDFEATURES_BASEURI"] ||= "http://www.fluidfeatures.com/service"
 ENV["FLUIDFEATURES_APPID"] ||= "123"
 ENV["FLUIDFEATURES_SECRET"] ||= "ssssshhhhhh"
 
