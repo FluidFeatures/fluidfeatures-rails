@@ -239,8 +239,10 @@ module ActionController
         # Tell FluidFeatures about this amazing new feature...
         options = Hash.new(defaults)
         options[:enabled] = enabled
-        options[:version] = version
-        ::Rails.logger.error "fluidfeature: #{feature_name.to_s} #{version}"
+        if options.has_key? :version
+          options.remove(:version)
+        end
+        ::Rails.logger.debug "fluidfeature: seeing feature '#{feature_name.to_s}' (version '#{version.to_s}') for the first time."
         FluidFeatures::Rails.unknown_feature_hit(feature_name, version, options)
       end
       enabled
