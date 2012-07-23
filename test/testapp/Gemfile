@@ -4,10 +4,7 @@ gem 'rake'
 gem 'railties'
 gem 'tzinfo'
 gem 'fluidfeatures-rails', :path => '../..'
-
-group :test do
-  gem "rspec-rails", "~> 2.0"
-  gem "fakeweb"
-  gem "yajl-ruby"
-  gem "json_spec"
-end
+gem "rspec-rails", "~> 2.0"
+gem "fakeweb"
+gem "yajl-ruby"
+gem "json_spec"
