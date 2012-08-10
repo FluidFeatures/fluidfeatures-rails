@@ -214,13 +214,11 @@ module ActionController
     # We call user_id to get the current user's unique id.
     #
     def fluidfeature(feature_name, defaults={})
-      @features_hit ||= []
-      @features_hit << feature_name
       if defaults === true or defaults === false
         defaults = { :enabled => defaults }
       end
       global_defaults = fluidfeatures_defaults || {}
-      version = (defaults[:version] || global_defaults[:version]).to_s
+      version_name = (defaults[:version] || global_defaults[:version]).to_s
       if not @features
         fluidfeatures_retrieve_user_features
       end
@@ -228,8 +226,8 @@ module ActionController
         if @features[feature_name].is_a? FalseClass or @features[feature_name].is_a? TrueClass
           enabled = @features[feature_name]
         elsif @features[feature_name].is_a? Hash
-          if @features[feature_name].has_key? version
-            enabled = @features[feature_name][version]
+          if @features[feature_name].has_key? version_name
+            enabled = @features[feature_name][version_name]
           end
         end
       end
@@ -242,8 +240,13 @@ module ActionController
         if options.has_key? :version
           options.remove(:version)
         end
-        ::Rails.logger.debug "fluidfeature: seeing feature '#{feature_name.to_s}' (version '#{version.to_s}') for the first time."
-        FluidFeatures::Rails.unknown_feature_hit(feature_name, version, options)
+        ::Rails.logger.debug "fluidfeature: seeing feature '#{feature_name.to_s}' (version '#{version_name.to_s}') for the first time."
+        FluidFeatures::Rails.unknown_feature_hit(feature_name, version_name, options)
+      end
+      if enabled
+        @features_hit ||= {}
+        @features_hit[feature_name] ||= {}
+        @features_hit[feature_name][version_name] = {}
       end
       enabled
     end
