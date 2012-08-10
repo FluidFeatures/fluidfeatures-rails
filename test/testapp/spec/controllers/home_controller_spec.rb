@@ -41,11 +41,11 @@ describe HomeController do
       JsonSpec.exclude_keys("duration")
       features_hit_request.body.should be_json_eql(%({
         "features": {
-          "hit": [
-            "apples",
-            "oranges",
-            "lemons"
-          ],
+          "hit": {
+            "apples": {
+                "1": {}
+            }
+          },
           "unknown": {
             // features that we have not seen before
             "apples": {
@@ -92,11 +92,14 @@ describe HomeController do
       JsonSpec.exclude_keys("duration")
       features_hit_request.body.should be_json_eql(%({
         "features": {
-          "hit": [
-            "apples",
-            "oranges",
-            "lemons"
-          ],
+          "hit": {
+            "oranges": {
+                "1": {}
+            },
+            "lemons": {
+                "1": {}
+            }
+          },
           "unknown": {
             // no unknown features
           }
