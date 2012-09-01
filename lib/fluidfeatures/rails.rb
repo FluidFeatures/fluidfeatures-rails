@@ -246,7 +246,7 @@ module ActionController
       if enabled
         @features_hit ||= {}
         @features_hit[feature_name] ||= {}
-        @features_hit[feature_name][version_name] = {}
+        @features_hit[feature_name][version_name.to_s] = {}
       end
       enabled
     end
