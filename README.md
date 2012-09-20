@@ -1,4 +1,4 @@
-[![Build Status](https://secure.travis-ci.org/BigFastSite/fluidfeatures-rails.png)](http://travis-ci.org/BigFastSite/fluidfeatures-rails)
+[![Build Status](https://secure.travis-ci.org/FluidFeatures/fluidfeatures-rails.png)](http://travis-ci.org/FluidFeatures/fluidfeatures-rails)
 
 fluidfeatures-rails
 ===================
