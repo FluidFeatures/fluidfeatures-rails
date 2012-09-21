@@ -328,7 +328,7 @@ module ActionController
       # By default unknown features are disabled.
       {
         :enabled => false,
-        :version => 1
+        :version => :default
       }
     end
 
