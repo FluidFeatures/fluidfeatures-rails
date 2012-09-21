@@ -156,7 +156,7 @@ module FluidFeatures
     # back with the default_enabled status (see unknown_feature_hit)
     # so that FluidFeatures can auto-populate the dashboard.
     #
-    def self.log_features_hit(user_id, features_hit, request_duration)
+    def self.log_features_hit(user_id, features_hit, options={})
       begin
         uri = URI(@@baseuri + "/app/" + @@app_id.to_s + "/user/" + user_id.to_s + "/features/hit")
         request = Net::HTTP::Post.new uri.path
@@ -164,12 +164,15 @@ module FluidFeatures
         request["Accept"] = "application/json"
         request['AUTHORIZATION'] = @@secret
         payload = {
+          :user => {
+            :anonymous => options[:anonymous]
+          },
           :stats => {
             :fetch => {
               :duration => @@last_fetch_duration
             },
             :request => {
-              :duration => request_duration
+              :duration => options[:request_duration]
             }
           },
           :features => {
@@ -203,8 +206,35 @@ module ActionController
     # This must be overriden within the user application.
     # We recommend doing this in application_controller.rb
     #
-    def fluidfeatures_set_user_id(user_id)
+    def fluidfeatures_set_user_id(user_id, options={})
+
+      if user_id and not options[:anonymous]
+        # We no longer an anoymous users. Let's delete the cookie
+        if cookies.has_key? :fluidfeatures_anonymous
+          cookies.delete(:fluidfeatures_anonymous)
+        end
+      else
+        # We're an anonymous user
+
+        # if we were not given a user_id for this anonymous user, then get
+        # it from an existing cookie or create a new one.
+        unless user_id
+          # Have we seen them before?
+          if cookies.has_key? :fluidfeatures_anonymous
+            user_id = cookies[:fluidfeatures_anonymous]
+          else
+            # Create new cookie. Use rand + micro-seconds of current time
+            user_id = "anon-" + Random.rand(9999999999).to_s + "-" + ((Time.now.to_f * 1000000).to_i % 1000000).to_s
+          end
+        end
+        # update the cookie, with whatever the user_id has been set to
+        cookies[:fluidfeatures_anonymous] = user_id
+      end
+
       @ff_user_id = user_id
+      @ff_user_anonymous = !!options[:anonymous]
+
+      user_id
     end
     
     #
@@ -276,7 +306,10 @@ module ActionController
     def fluidfeatures_store_features_hit
       if @features
         request_duration = Time.now - @ff_request_start_time
-        FluidFeatures::Rails.log_features_hit(@ff_user_id, @features_hit, request_duration)
+        FluidFeatures::Rails.log_features_hit(@ff_user_id, @features_hit, {
+          :request_duration => request_duration,
+          :anonymous => @ff_user_anonymous
+        })
       end
     end
     

@@ -40,6 +40,9 @@ describe HomeController do
       features_hit_request = FakeWeb.last_request
       JsonSpec.exclude_keys("duration")
       features_hit_request.body.should be_json_eql(%({
+        "user": {
+          "anonymous": false
+        },
         "features": {
           "hit": {
             "apples": {
@@ -91,6 +94,9 @@ describe HomeController do
       features_hit_request = FakeWeb.last_request
       JsonSpec.exclude_keys("duration")
       features_hit_request.body.should be_json_eql(%({
+        "user": {
+          "anonymous": false
+        },
         "features": {
           "hit": {
             "oranges": {
