@@ -192,6 +192,9 @@ end
 module ActionController
   class Base
     
+    # allow fluidfeature to be called from templates
+    helper_method :fluidfeature
+
     #
     # Here is how we know what your user_id is for the user
     # making the current request.
