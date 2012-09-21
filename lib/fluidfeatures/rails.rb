@@ -1,18 +1,4 @@
 
-require 'rails'
-require 'net/http'
-require 'persistent_http'
-
-#
-# Without these FluidFeatures credentials we cannot talk to
-# the FluidFeatures service.
-#
-%w[FLUIDFEATURES_BASEURI FLUIDFEATURES_SECRET FLUIDFEATURES_APPID].each do |key|
-  unless ENV[key]
-    raise "Environment variable #{key} expected"
-  end
-end
-
 module FluidFeatures
   module Rails
     
@@ -21,6 +7,27 @@ module FluidFeatures
     # It sets up the before and after request hooks
     #
     def self.initializer
+
+      #
+      # Without these FluidFeatures credentials we cannot talk to
+      # the FluidFeatures service.
+      #
+      %w[FLUIDFEATURES_BASEURI FLUIDFEATURES_SECRET FLUIDFEATURES_APPID].each do |key|
+        unless ENV[key]
+          $stderr.puts "!! fluidfeatures-rails requires ENV[\"#{key}\"] (fluidfeatures is disabled)"
+          return
+        end
+      end
+      unless defined? ::Rails
+        $stderr.puts "!! fluidfeatures-rails requires rails (fluidfeatures is disabled)"
+        return
+      end
+      $stderr.puts "=> fluidfeatures-rails initializing as app #{ENV["FLUIDFEATURES_APPID"]} with #{ENV["FLUIDFEATURES_BASEURI"]}"
+
+
+      require 'net/http'
+      require 'persistent_http'
+
       ::Rails::Application.initializer "fluidfeatures.initializer" do
         ActiveSupport.on_load(:action_controller) do
 
@@ -38,8 +45,8 @@ module FluidFeatures
           @@unknown_features = {}
           @@last_fetch_duration = nil
 
-          ActionController::Base.append_before_filter :fluidfeatures_request_init
-          ActionController::Base.append_after_filter :fluidfeatures_store_features_hit
+          ActionController::Base.append_before_filter :fluidfeatures_request_before
+          ActionController::Base.append_after_filter  :fluidfeatures_request_after
 
         end
       end
@@ -156,33 +163,18 @@ module FluidFeatures
     # back with the default_enabled status (see unknown_feature_hit)
     # so that FluidFeatures can auto-populate the dashboard.
     #
-    def self.log_features_hit(user_id, features_hit, options={})
+    def self.log_request(user_id, payload)
       begin
-        uri = URI(@@baseuri + "/app/" + @@app_id.to_s + "/user/" + user_id.to_s + "/features/hit")
+        (payload[:stats] ||= {})[:ff_latency] = @@last_fetch_duration
+        if @@unknown_features.size
+          (payload[:features] ||= {})[:unknown] = @@unknown_features
+          @@unknown_features = {}
+        end
+        uri = URI(@@baseuri + "/app/#{@@app_id}/user/#{user_id}/features/hit")
         request = Net::HTTP::Post.new uri.path
         request["Content-Type"] = "application/json"
         request["Accept"] = "application/json"
         request['AUTHORIZATION'] = @@secret
-        payload = {
-          :user => {
-            :anonymous => options[:anonymous]
-          },
-          :stats => {
-            :fetch => {
-              :duration => @@last_fetch_duration
-            },
-            :request => {
-              :duration => options[:request_duration]
-            }
-          },
-          :features => {
-            :hit => features_hit
-          }
-        }
-        if @@unknown_features.size
-          payload[:features][:unknown] = @@unknown_features
-          @@unknown_features = {}
-        end
         request.body = JSON.dump(payload)
         response = @@http.request request
         unless response.is_a?(Net::HTTPSuccess)
@@ -233,6 +225,7 @@ module ActionController
 
       @ff_user_id = user_id
       @ff_user_anonymous = !!options[:anonymous]
+      @ff_user_attributes = options[:attributes]
 
       user_id
     end
@@ -284,7 +277,7 @@ module ActionController
     #
     # Initialize the FluidFeatures state for this request.
     #
-    def fluidfeatures_request_init
+    def fluidfeatures_request_before
       @ff_request_start_time = Time.now
       @features = nil
     end
@@ -303,13 +296,28 @@ module ActionController
     # This helps the FluidFeatures database prepopulate the feature set
     # without requiring the developer to do it manually.
     # 
-    def fluidfeatures_store_features_hit
+    def fluidfeatures_request_after
       if @features
         request_duration = Time.now - @ff_request_start_time
-        FluidFeatures::Rails.log_features_hit(@ff_user_id, @features_hit, {
-          :request_duration => request_duration,
-          :anonymous => @ff_user_anonymous
-        })
+        url = "#{request.protocol}#{request.host_with_port}#{request.fullpath}"
+        payload = {
+          :stats => {
+            :request => {
+              :duration => request_duration
+            }
+          },
+          :features => {
+            :hit => @features_hit
+          },
+          :url => url
+        }
+        if @ff_user_anonymous
+          (payload[:user] ||= {})[:anonymous] = true
+        end
+        if @ff_user_attributes
+          (payload[:user] ||= {})[:attributes] = @ff_user_attributes
+        end
+        FluidFeatures::Rails.log_request(@ff_user_id, payload)
       end
     end
     
