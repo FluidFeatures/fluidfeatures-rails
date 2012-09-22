@@ -55,7 +55,7 @@ module FluidFeatures
         end
       end
 
-      @@enabled = true
+      @enabled = true
     end
     
     #
