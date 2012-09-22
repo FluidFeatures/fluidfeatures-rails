@@ -1,6 +1,10 @@
 
 module FluidFeatures
   module Rails
+
+    class << self
+      attr_accessor :enabled
+    end
     
     #
     # This is called once, when your Rails application fires up.
@@ -50,6 +54,8 @@ module FluidFeatures
 
         end
       end
+
+      @@enabled = true
     end
     
     #
@@ -242,6 +248,9 @@ module ActionController
     def fluidfeature(feature_name, defaults={})
       if defaults === true or defaults === false
         defaults = { :enabled => defaults }
+      end
+      unless ::FluidFeatures::Rails.enabled
+        return defaults[:enabled] || false
       end
       global_defaults = fluidfeatures_defaults || {}
       version_name = (defaults[:version] || global_defaults[:version]).to_s
