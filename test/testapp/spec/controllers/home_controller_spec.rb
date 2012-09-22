@@ -38,36 +38,33 @@ describe HomeController do
 
       # Check the call to features hit
       features_hit_request = FakeWeb.last_request
-      JsonSpec.exclude_keys("duration")
+      JsonSpec.exclude_keys("duration", "ff_latency")
       features_hit_request.body.should be_json_eql(%({
-        "user": {
-          "anonymous": false
-        },
         "features": {
           "hit": {
             "apples": {
-                "1": {}
+                "default": {}
             }
           },
           "unknown": {
             // features that we have not seen before
             "apples": {
               "versions": {
-                "1": {
+                "default": {
                   "enabled": true
                 }
               }
             },
             "lemons": {
               "versions": {
-                "1": {
+                "default": {
                   "enabled": false
                 }
               }
             },
             "oranges": {
               "versions": {
-                "1": {
+                "default": {
                   "enabled": false
                 }
               }
@@ -75,13 +72,12 @@ describe HomeController do
           }
         },
         "stats": {
-          "fetch": {
-            // duration ignored
-          },
+          "ff_latency": 1,
           "request": {
             // duration ignored
           }
-        }
+        },
+        "url": "http://test.host/?user_id=1"
       }))
     end
 
@@ -92,18 +88,15 @@ describe HomeController do
 
       # Check the call to features hit
       features_hit_request = FakeWeb.last_request
-      JsonSpec.exclude_keys("duration")
+      JsonSpec.exclude_keys("duration", "ff_latency")
       features_hit_request.body.should be_json_eql(%({
-        "user": {
-          "anonymous": false
-        },
         "features": {
           "hit": {
             "oranges": {
-                "1": {}
+                "default": {}
             },
             "lemons": {
-                "1": {}
+                "default": {}
             }
           },
           "unknown": {
@@ -111,13 +104,12 @@ describe HomeController do
           }
         },
         "stats": {
-          "fetch": {
-            // duration ignored
-          },
+          "ff_latency": 1,
           "request": {
             // duration ignored
           }
-        }
+        },
+        "url": "http://test.host/?user_id=2"
       }))
     end
 
