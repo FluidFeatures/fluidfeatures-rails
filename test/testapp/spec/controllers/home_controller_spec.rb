@@ -40,12 +40,19 @@ describe HomeController do
       features_hit_request = FakeWeb.last_request
       JsonSpec.exclude_keys("duration", "ff_latency")
       features_hit_request.body.should be_json_eql(%({
-        "features": {
-          "hit": {
+        "user": {
+          "id": "1"
+        },
+        "hits": {
+          "feature": {
             "apples": {
                 "default": {}
             }
           },
+          "goal": {
+          }
+        },
+        "features": {
           "unknown": {
             // features that we have not seen before
             "apples": {
@@ -90,8 +97,11 @@ describe HomeController do
       features_hit_request = FakeWeb.last_request
       JsonSpec.exclude_keys("duration", "ff_latency")
       features_hit_request.body.should be_json_eql(%({
-        "features": {
-          "hit": {
+        "user": {
+          "id": "2"
+        },
+        "hits": {
+          "feature": {
             "oranges": {
                 "default": {}
             },
@@ -99,6 +109,10 @@ describe HomeController do
                 "default": {}
             }
           },
+          "goal": {
+          }
+        },
+        "features": {
           "unknown": {
             // no unknown features
           }
