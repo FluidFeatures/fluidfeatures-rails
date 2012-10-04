@@ -207,9 +207,13 @@ module ActionController
     # This must be overriden within the user application.
     # We recommend doing this in application_controller.rb
     #
-    def fluidfeatures_set_user_id(user_id, options={})
+    def fluidfeatures_initialize_user
 
-      if user_id and not options[:anonymous]
+      # TODO: Do not always get verbose user details.
+      #       Get for new users and then less frequently.
+      user = fluidfeature_current_user(verbose=true)
+
+      if user[:id] and not user[:anonymous]
         # We no longer an anoymous users. Let's delete the cookie
         if cookies.has_key? :fluidfeatures_anonymous
           cookies.delete(:fluidfeatures_anonymous)
@@ -217,28 +221,31 @@ module ActionController
       else
         # We're an anonymous user
 
-        # if we were not given a user_id for this anonymous user, then get
+        # if we were not given a user[:id] for this anonymous user, then get
         # it from an existing cookie or create a new one.
-        unless user_id
+        unless user[:id]
           # Have we seen them before?
           if cookies.has_key? :fluidfeatures_anonymous
-            user_id = cookies[:fluidfeatures_anonymous]
+            user[:id] = cookies[:fluidfeatures_anonymous]
           else
             # Create new cookie. Use rand + micro-seconds of current time
-            user_id = "anon-" + Random.rand(9999999999).to_s + "-" + ((Time.now.to_f * 1000000).to_i % 1000000).to_s
+            user[:id] = "anon-" + Random.rand(9999999999).to_s + "-" + ((Time.now.to_f * 1000000).to_i % 1000000).to_s
           end
         end
-        # update the cookie, with whatever the user_id has been set to
-        cookies[:fluidfeatures_anonymous] = user_id
+        # update the cookie, with whatever the user[:id] has been set to
+        cookies[:fluidfeatures_anonymous] = user[:id]
       end
-
-      @ff_user_id = user_id
-      @ff_user_anonymous = !!options[:anonymous]
-      @ff_user_attributes = options[:attributes]
-
-      user_id
+      user[:anonymous] = !!user[:anonymous]
+      @ff_user = user
     end
-    
+
+    def fluidfeatures_user
+      unless @ff_user
+        fluidfeatures_initialize_user
+      end
+      @ff_user
+    end
+
     #
     # This is called by the developer's code to determine if the
     # feature, specified by "feature_name" is enabled for the
@@ -254,15 +261,15 @@ module ActionController
       end
       global_defaults = fluidfeatures_defaults || {}
       version_name = (defaults[:version] || global_defaults[:version]).to_s
-      if not @features
+      if not @ff_features
         fluidfeatures_retrieve_user_features
       end
-      if @features.has_key? feature_name
-        if @features[feature_name].is_a? FalseClass or @features[feature_name].is_a? TrueClass
-          enabled = @features[feature_name]
-        elsif @features[feature_name].is_a? Hash
-          if @features[feature_name].has_key? version_name
-            enabled = @features[feature_name][version_name]
+      if @ff_features.has_key? feature_name
+        if @ff_features[feature_name].is_a? FalseClass or @ff_features[feature_name].is_a? TrueClass
+          enabled = @ff_features[feature_name]
+        elsif @ff_features[feature_name].is_a? Hash
+          if @ff_features[feature_name].has_key? version_name
+            enabled = @ff_features[feature_name][version_name]
           end
         end
       end
@@ -279,11 +286,17 @@ module ActionController
         FluidFeatures::Rails.unknown_feature_hit(feature_name, version_name, options)
       end
       if enabled
-        @features_hit ||= {}
-        @features_hit[feature_name] ||= {}
-        @features_hit[feature_name][version_name.to_s] = {}
+        @ff_features_hit[feature_name] ||= {}
+        @ff_features_hit[feature_name][version_name.to_s] = {}
       end
       enabled
+    end
+
+    def fluidgoal(goal_name, defaults={})
+      global_defaults = fluidfeatures_defaults || {}
+      version_name = (defaults[:version] || global_defaults[:version]).to_s
+      @ff_goals_hit[goal_name] ||= {}
+      @ff_goals_hit[goal_name][version_name.to_s] = {}
     end
 
     #
@@ -291,14 +304,16 @@ module ActionController
     #
     def fluidfeatures_request_before
       @ff_request_start_time = Time.now
-      @features = nil
+      @ff_features = nil
+      @ff_features_hit = {}
+      @ff_goals_hit = {}
     end
     
     #
     # Returns the features enabled for this request's user.
     #
     def fluidfeatures_retrieve_user_features
-      @features = FluidFeatures::Rails.get_user_features(@ff_user_id)
+      @ff_features = FluidFeatures::Rails.get_user_features(fluidfeatures_user[:id])
     end
      
     #
@@ -309,28 +324,30 @@ module ActionController
     # without requiring the developer to do it manually.
     # 
     def fluidfeatures_request_after
-      if @features
-        request_duration = Time.now - @ff_request_start_time
-        url = "#{request.protocol}#{request.host_with_port}#{request.fullpath}"
-        payload = {
-          :stats => {
-            :request => {
-              :duration => request_duration
-            }
-          },
-          :features => {
-            :hit => @features_hit
-          },
-          :url => url
-        }
-        if @ff_user_anonymous
-          (payload[:user] ||= {})[:anonymous] = true
-        end
-        if @ff_user_attributes
-          (payload[:user] ||= {})[:attributes] = @ff_user_attributes
-        end
-        FluidFeatures::Rails.log_request(@ff_user_id, payload)
+      request_duration = Time.now - @ff_request_start_time
+      url = "#{request.protocol}#{request.host_with_port}#{request.fullpath}"
+      payload = {
+        :user => {
+          :id => fluidfeatures_user[:id]
+        },
+        :stats => {
+          :request => {
+            :duration => request_duration
+          }
+        },
+        :hits => {
+          :feature => @ff_features_hit,
+          :goal    => @ff_goals_hit
+        },
+        :url => url
+      }
+      if fluidfeatures_user[:anonymous]
+        (payload[:user] ||= {})[:anonymous] = true
       end
+      if fluidfeatures_user[:attributes]
+        (payload[:user] ||= {})[:attributes] = fluidfeatures_user[:attributes]
+      end
+      FluidFeatures::Rails.log_request(fluidfeatures_user[:id], payload)
     end
     
     def fluidfeatures_defaults
