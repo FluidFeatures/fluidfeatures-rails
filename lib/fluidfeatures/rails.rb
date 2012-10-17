@@ -220,6 +220,7 @@ module ActionController
         end
       else
         # We're an anonymous user
+        user[:anonymous] = true
 
         # if we were not given a user[:id] for this anonymous user, then get
         # it from an existing cookie or create a new one.
