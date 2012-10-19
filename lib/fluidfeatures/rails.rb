@@ -118,25 +118,58 @@ module FluidFeatures
     # This will depend on the user_id and how many users each
     # feature is enabled for.
     #
-    def self.get_user_features(user_id)
-      if not user_id
-        raise "user_id is not given for get_user_features"
+    def self.get_user_features(user)
+
+      if not user
+        raise "user object should be a Hash"
       end
+      if not user[:id]
+        raise "user does not contain :id field"
+      end
+
+      # extract just attribute ids into simple hash
+      attribute_ids = {
+        :anonymous => !!user[:anonymous]
+      }
+      [:unique, :cohorts].each do |attr_type|
+        if user.has_key? attr_type
+          user[attr_type].each do |attr_key, attr|
+            if attr.is_a? Hash
+              if attr.has_key? :id
+                attribute_ids[attr_key] = attr[:id]
+              end
+            else
+              attribute_ids[attr_key] = attr
+            end
+          end
+        end
+      end
+
+      # normalize attributes ids as strings
+      attribute_ids.each do |attr_key, attr_id|
+        if attr_id.is_a? FalseClass or attr_id.is_a? TrueClass
+          attribute_ids[attr_key] = attr_id.to_s.downcase
+        elsif not attr_id.is_a? String
+          attribute_ids[attr_key] = attr_id.to_s
+        end
+      end
+
       features = {}
       fetch_start_time = Time.now
       begin
-        uri = URI(@@baseuri + "/app/" + @@app_id.to_s + "/user/" + user_id.to_s + "/features")
-        request = Net::HTTP::Get.new uri.path
+        uri = URI("#{@@baseuri}/app/#{@@app_id}/user/#{user[:id]}/features")
+        uri.query = URI.encode_www_form( attribute_ids )
+        request = Net::HTTP::Get.new "#{uri.path}?#{uri.query}"
         request["Accept"] = "application/json"
         request['AUTHORIZATION'] = @@secret
         response = @@http.request request
         if response.is_a?(Net::HTTPSuccess)
           features = JSON.parse(response.body)
         else
-          ::Rails.logger.error "[" + response.code.to_s + "] Failed to get user features : " + uri.to_s + " : " + response.body.to_s
+          ::Rails.logger.error "[#{response.code}] Failed to get user features : #{uri} : #{response.body}"
         end
       rescue
-        ::Rails.logger.error "Request to get user features failed : " + uri.to_s
+        ::Rails.logger.error "Request to get user features failed : #{uri}"
         raise
       end
       @@last_fetch_duration = Time.now - fetch_start_time
@@ -314,7 +347,8 @@ module ActionController
     # Returns the features enabled for this request's user.
     #
     def fluidfeatures_retrieve_user_features
-      @ff_features = FluidFeatures::Rails.get_user_features(fluidfeatures_user[:id])
+      user = fluidfeatures_user
+      @ff_features = FluidFeatures::Rails.get_user_features(user)
     end
      
     #
