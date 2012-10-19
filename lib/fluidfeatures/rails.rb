@@ -342,11 +342,10 @@ module ActionController
         },
         :url => url
       }
-      if fluidfeatures_user[:anonymous]
-        (payload[:user] ||= {})[:anonymous] = true
-      end
-      if fluidfeatures_user[:attributes]
-        (payload[:user] ||= {})[:attributes] = fluidfeatures_user[:attributes]
+      [:name, :anonymous, :unique, :cohorts].each do |key|
+        if fluidfeatures_user[key]
+          (payload[:user] ||= {})[key] = fluidfeatures_user[key]
+        end
       end
       FluidFeatures::Rails.log_request(fluidfeatures_user[:id], payload)
     end
