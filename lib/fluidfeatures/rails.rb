@@ -247,7 +247,7 @@ module ActionController
       user = fluidfeature_current_user(verbose=true)
 
       if user[:id] and not user[:anonymous]
-        # We no longer an anoymous users. Let's delete the cookie
+        # We are no longer an anoymous users. Delete the cookie
         if cookies.has_key? :fluidfeatures_anonymous
           cookies.delete(:fluidfeatures_anonymous)
         end
