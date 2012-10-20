@@ -10,12 +10,12 @@ describe HomeController do
     before do
       FakeWeb.register_uri(
         :get,
-        File.join(ENV["FLUIDFEATURES_BASEURI"], "/app/123/user/1/features"),
+        File.join(ENV["FLUIDFEATURES_BASEURI"], "/app/123/user/1/features?anonymous=?false"),
         :body => JSON.generate({}) # no features registered yet
       )
       FakeWeb.register_uri(
         :get,
-        File.join(ENV["FLUIDFEATURES_BASEURI"], "/app/123/user/2/features"),
+        File.join(ENV["FLUIDFEATURES_BASEURI"], "/app/123/user/2/features?anonymous=false"),
         :body => JSON.generate({
           :apples => false, 
           :oranges => true, 

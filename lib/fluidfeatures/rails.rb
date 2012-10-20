@@ -159,7 +159,11 @@ module FluidFeatures
       begin
         uri = URI("#{@@baseuri}/app/#{@@app_id}/user/#{user[:id]}/features")
         uri.query = URI.encode_www_form( attribute_ids )
-        request = Net::HTTP::Get.new "#{uri.path}?#{uri.query}"
+        url_path = uri.path
+        if uri.query
+          url_path += "?" + uri.query
+        end
+        request = Net::HTTP::Get.new url_path
         request["Accept"] = "application/json"
         request['AUTHORIZATION'] = @@secret
         response = @@http.request request
