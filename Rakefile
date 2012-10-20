@@ -7,6 +7,7 @@ task :default => :test
 
 task :test do
   Dir.chdir("test/testapp") do
+    system("bundle update")
     exec("bundle exec rspec spec")
   end
 end
