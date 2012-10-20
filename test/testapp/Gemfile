@@ -8,3 +8,7 @@ gem "rspec-rails", "~> 2.0"
 gem "fakeweb"
 gem "json_pure"
 gem "json_spec"
+
+# JRuby Rails requires this for active_support/message_encryptor.rb
+gem 'jruby-openssl',      :platforms => :jruby
+
