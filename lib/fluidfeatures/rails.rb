@@ -170,6 +170,7 @@ module FluidFeatures
         request = Net::HTTP::Get.new url_path
         request["Accept"] = "application/json"
         request['AUTHORIZATION'] = @@secret
+        $stderr.puts "GET #{uri}"
         response = @@http.request request
         if response.is_a?(Net::HTTPSuccess)
           features = JSON.parse(response.body)
