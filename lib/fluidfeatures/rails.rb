@@ -31,10 +31,6 @@ module FluidFeatures
       end
       $stderr.puts "=> fluidfeatures-rails initializing as app #{ENV["FLUIDFEATURES_APPID"]} with #{ENV["FLUIDFEATURES_BASEURI"]}"
 
-
-      require 'net/http'
-      require 'persistent_http'
-
       ::Rails::Application.initializer "fluidfeatures.initializer" do
         ActiveSupport.on_load(:action_controller) do
           api_baseuri = ENV["FLUIDFEATURES_BASEURI"]
