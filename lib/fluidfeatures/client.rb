@@ -4,6 +4,8 @@ require "logger"
 module FluidFeatures
   class Client
 
+    attr_accessor :logger
+
     def initialize(base_uri, app_id, secret, options={})
 
       @logger = options[:logger] || ::Logger.new(STDERR)
@@ -47,10 +49,10 @@ module FluidFeatures
         request.body = JSON.dump(payload)
         response = @http.request uri, request
         if response.is_a?(Net::HTTPSuccess)
-          @logger.error "[" + response.code.to_s + "] Failed to set feature enabled percent : " + uri.to_s + " : " + response.body.to_s
+          logger.error{"[" + response.code.to_s + "] Failed to set feature enabled percent : " + uri.to_s + " : " + response.body.to_s}
         end
       rescue
-        @logger.error "Request to set feature enabled percent failed : " + uri.to_s
+        logger.error{"Request to set feature enabled percent failed : " + uri.to_s}
         raise
       end
     end
@@ -72,11 +74,11 @@ module FluidFeatures
           features = JSON.parse(response.body)
         end
       rescue
-        @logger.error "Request failed when getting feature set from " + uri.to_s
+        logger.error{"Request failed when getting feature set from " + uri.to_s}
         raise
       end
       if not features
-        @logger.error "Empty feature set returned from " + uri.to_s
+        logger.error{"Empty feature set returned from " + uri.to_s}
       end
       features
     end
@@ -87,6 +89,7 @@ module FluidFeatures
     # feature is enabled for.
     #
     def get_user_features(user)
+      logger.debug{"[FF] get_user_features #{user}"}
       if not user
         raise "user object should be a Hash"
       end
@@ -137,10 +140,10 @@ module FluidFeatures
         if response.is_a?(Net::HTTPSuccess)
           features = JSON.parse(response.body)
         else
-          @logger.error "[#{response.code}] Failed to get user features : #{uri} : #{response.body}"
+          logger.error{"[#{response.code}] Failed to get user features : #{uri} : #{response.body}"}
         end
       rescue
-        @logger.error "Request to get user features failed : #{uri}"
+        logger.error{"Request to get user features failed : #{uri}"}
         raise
       end
       @last_fetch_duration = Time.now - fetch_start_time
@@ -188,10 +191,10 @@ module FluidFeatures
         request.body = JSON.dump(payload)
         response = @http.request request
         unless response.is_a?(Net::HTTPSuccess)
-          @logger.error "[" + response.code.to_s + "] Failed to log features hit : " + uri.to_s + " : " + response.body.to_s
+          logger.error{"[" + response.code.to_s + "] Failed to log features hit : " + uri.to_s + " : " + response.body.to_s}
         end
       rescue Exception => e
-        @logger.error "Request to log user features hit failed : " + uri.to_s
+        logger.error{"Request to log user features hit failed : " + uri.to_s}
         raise
       end
     end
