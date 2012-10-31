@@ -1,12 +1,12 @@
 
-require "fluidfeatures/client"
+require "fluidfeatures"
 
 module FluidFeatures
   module Rails
 
     class << self
       attr_accessor :enabled
-      attr_accessor :client
+      attr_accessor :ff_app
     end
     
     #
@@ -37,14 +37,11 @@ module FluidFeatures
           api_appid   = ENV["FLUIDFEATURES_APPID"]
           api_secret  = ENV["FLUIDFEATURES_SECRET"]
 
-          ::FluidFeatures::Rails.client = ::FluidFeatures::Client.new(
+          ::FluidFeatures::Rails.ff_app = ::FluidFeatures.app(
             api_baseuri,
             api_appid,
             api_secret,
-            # options
-            {
-              :logger => nil,#::Rails.logger
-            }
+            #::Rails.logger
           )
 
           ActionController::Base.append_before_filter :fluidfeatures_request_before
@@ -54,13 +51,13 @@ module FluidFeatures
 
       @enabled = true
     end
-    
+
   end
 end
 
 module ActionController
   class Base
-    
+
     # allow fluidfeature to be called from templates
     helper_method :fluidfeature
 
@@ -72,42 +69,48 @@ module ActionController
     #
     def fluidfeatures_initialize_user
 
-      # TODO: Do not always get verbose user details.
-      #       Get for new users and then less frequently.
-      user = fluidfeature_current_user(verbose=true)
+      # call app defined method "fluidfeatures_current_user"
+      user = nil
+      begin
+        user = fluidfeatures_current_user(verbose=true)
+      rescue NoMethodError
+        ::Rails.logger.error "[FF] Method fluidfeatures_current_user is not defined in your ApplicationController"
+        return nil
+      end
+      unless user.is_a? Hash
+        raise "fluidfeatures_current_user returned invalid user (Hash expected) : #{user}"
+      end
 
-      if user[:id] and not user[:anonymous]
-        # We are no longer an anoymous users. Delete the cookie
+      # default to anonymous is not user id given
+      user[:anonymous] = false unless user[:id]
+
+      # if no user id given, then attempt to get the unique id of this visitor from the cookie
+      user[:id] ||= cookies[:fluidfeatures_anonymous]
+
+      @ff_user = ::FluidFeatures::Rails.ff_app.user(
+        user[:id],
+        user[:name],
+        !!user[:anonymous],
+        user[:uniques],
+        user[:cohorts]
+      )
+
+      # Set/delete cookies for anonymous users
+      if @ff_user.anonymous
+        # update the cookie, with the unique id of this user
+        cookies[:fluidfeatures_anonymous] = @ff_user.unique_id
+      else
+        # We are no longer an anoymous user. Delete the cookie
         if cookies.has_key? :fluidfeatures_anonymous
           cookies.delete(:fluidfeatures_anonymous)
         end
-      else
-        # We're an anonymous user
-        user[:anonymous] = true
-
-        # if we were not given a user[:id] for this anonymous user, then get
-        # it from an existing cookie or create a new one.
-        unless user[:id]
-          # Have we seen them before?
-          if cookies.has_key? :fluidfeatures_anonymous
-            user[:id] = cookies[:fluidfeatures_anonymous]
-          else
-            # Create new cookie. Use rand + micro-seconds of current time
-            user[:id] = "anon-" + Random.rand(9999999999).to_s + "-" + ((Time.now.to_f * 1000000).to_i % 1000000).to_s
-          end
-        end
-        # update the cookie, with whatever the user[:id] has been set to
-        cookies[:fluidfeatures_anonymous] = user[:id]
       end
-      user[:anonymous] = !!user[:anonymous]
-      @ff_user = user
+
+      @ff_user
     end
 
     def fluidfeatures_user
-      unless @ff_user
-        fluidfeatures_initialize_user
-      end
-      @ff_user
+      @ff_user ||= fluidfeatures_initialize_user
     end
 
     #
@@ -116,51 +119,25 @@ module ActionController
     # current user.
     # We call user_id to get the current user's unique id.
     #
-    def fluidfeature(feature_name, defaults={})
-      if defaults === true or defaults === false
-        defaults = { :enabled => defaults }
+    def fluidfeature(feature_name, version_name=nil, default_enabled=nil)
+      if default_enabled == nil and (version_name.is_a? FalseClass or version_name.is_a? TrueClass)
+        default_enabled = version_name
+        version_name = nil
+      end
+      unless default_enabled.is_a? FalseClass or default_enabled.is_a? TrueClass
+        default_enabled = fluidfeatures_default_enabled
       end
       unless ::FluidFeatures::Rails.enabled
-        return defaults[:enabled] || false
+        return default_enabled || false
       end
-      global_defaults = fluidfeatures_defaults || {}
-      version_name = (defaults[:version] || global_defaults[:version]).to_s
-      if not @ff_features
-        fluidfeatures_retrieve_user_features
-      end
-      if @ff_features.has_key? feature_name
-        if @ff_features[feature_name].is_a? FalseClass or @ff_features[feature_name].is_a? TrueClass
-          enabled = @ff_features[feature_name]
-        elsif @ff_features[feature_name].is_a? Hash
-          if @ff_features[feature_name].has_key? version_name
-            enabled = @ff_features[feature_name][version_name]
-          end
-        end
-      end
-      if enabled === nil
-        enabled = defaults[:enabled] || global_defaults[:enabled]
-        
-        # Tell FluidFeatures about this amazing new feature...
-        options = Hash.new(defaults)
-        options[:enabled] = enabled
-        if options.has_key? :version
-          options.remove(:version)
-        end
-        ::Rails.logger.debug "fluidfeature: seeing feature '#{feature_name.to_s}' (version '#{version_name.to_s}') for the first time."
-        ::FluidFeatures::Rails.client.unknown_feature_hit(feature_name, version_name, options)
-      end
-      if enabled
-        @ff_features_hit[feature_name] ||= {}
-        @ff_features_hit[feature_name][version_name.to_s] = {}
-      end
-      enabled
+      fluidfeatures_user.feature_enabled?(feature_name, version_name, default_enabled)
     end
 
-    def fluidgoal(goal_name, defaults={})
-      global_defaults = fluidfeatures_defaults || {}
-      version_name = (defaults[:version] || global_defaults[:version]).to_s
-      @ff_goals_hit[goal_name] ||= {}
-      @ff_goals_hit[goal_name][version_name.to_s] = {}
+    def fluidgoal(goal_name, goal_version_name=nil)
+      unless ::FluidFeatures::Rails.enabled
+        return default_enabled || false
+      end
+      fluidfeatures_user.goal_hit(goal_name, goal_version_name)
     end
 
     #
@@ -168,19 +145,15 @@ module ActionController
     #
     def fluidfeatures_request_before
       @ff_request_start_time = Time.now
-      @ff_features = nil
-      @ff_features_hit = {}
-      @ff_goals_hit = {}
     end
-    
+
     #
     # Returns the features enabled for this request's user.
     #
     def fluidfeatures_retrieve_user_features
-      user = fluidfeatures_user
-      @ff_features = ::FluidFeatures::Rails.client.get_user_features(user)
+      fluidfeatures_user.features
     end
-     
+
     #
     # After the rails request is complete we will log which features we
     # encountered, including the default settings (eg. enabled) for each
@@ -191,36 +164,27 @@ module ActionController
     def fluidfeatures_request_after
       request_duration = Time.now - @ff_request_start_time
       url = "#{request.protocol}#{request.host_with_port}#{request.fullpath}"
-      payload = {
-        :user => {
-          :id => fluidfeatures_user[:id]
-        },
-        :stats => {
+      fluidfeatures_user.end_transaction(
+        url,
+        # stats
+        {
           :request => {
             :duration => request_duration
           }
-        },
-        :hits => {
-          :feature => @ff_features_hit,
-          :goal    => @ff_goals_hit
-        },
-        :url => url
-      }
-      [:name, :anonymous, :unique, :cohorts].each do |key|
-        if fluidfeatures_user[key]
-          (payload[:user] ||= {})[key] = fluidfeatures_user[key]
-        end
-      end
-      ::FluidFeatures::Rails.client.log_request(fluidfeatures_user[:id], payload)
+        }
+      )
     end
-    
-    def fluidfeatures_defaults
+
+    def fluidfeatures_default_enabled
       # By default unknown features are disabled.
-      {
-        :enabled => false,
-        :version => :default
-      }
+      false
     end
+
+    def fluidfeatures_default_version_name
+      "default"
+    end
+
+    alias :ff? :fluidfeature
 
   end
 end

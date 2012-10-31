@@ -3,7 +3,7 @@ class FluidFeatureAjaxController < ApplicationController
   
   def index
     render :json => {
-      :enabled => fluidfeature(params[:feature_name])
+      :enabled => fluidfeature(params[:feature_name], params[:version_name])
     }, :status => 200
   end
 end
@@ -14,7 +14,7 @@ end
 
 class FluidGoalAjaxController < ApplicationController
   def index
-    fluidgoal(params[:goal_name], { :version => params[:goal_version] })
+    fluidgoal(params[:goal_name], params[:goal_version])
     render :json => {}, :status => 200
   end
 end
