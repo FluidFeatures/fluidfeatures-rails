@@ -83,7 +83,7 @@ module ActionController
         raise "fluidfeatures_current_user returned invalid user (Hash expected) : #{user}"
       end
 
-      # default to anonymous is not user id given
+      # default to anonymous is no user id given
       user[:anonymous] = false unless user[:id]
 
       # if no user id given, then attempt to get the unique id of this visitor from the cookie
@@ -119,7 +119,6 @@ module ActionController
     #
     def fluidfeatures_request_before
       @ff_transaction = fluidfeatures_initialize_user
-      @ff_request_start_time = Time.now
     end
 
     #
@@ -129,16 +128,21 @@ module ActionController
     # We call user_id to get the current user's unique id.
     #
     def fluidfeature(feature_name, version_name=nil, default_enabled=nil)
+
+      # also support: fluidfeature(feature_name, default_enabled)
       if default_enabled == nil and (version_name.is_a? FalseClass or version_name.is_a? TrueClass)
         default_enabled = version_name
         version_name = nil
       end
+
       unless default_enabled.is_a? FalseClass or default_enabled.is_a? TrueClass
         default_enabled = fluidfeatures_default_enabled
       end
+
       unless ::FluidFeatures::Rails.enabled
         return default_enabled || false
       end
+
       ff_transaction.feature_enabled?(feature_name, version_name, default_enabled)
     end
 
@@ -164,19 +168,12 @@ module ActionController
     # without requiring the developer to do it manually.
     # 
     def fluidfeatures_request_after
-      request_duration = Time.now - @ff_request_start_time
-      ff_transaction.end_transaction(
-        # stats
-        {
-          :request => {
-            :duration => request_duration
-          }
-        }
-      )
+      ff_transaction.end_transaction
     end
 
     def fluidfeatures_default_enabled
       # By default unknown features are disabled.
+      # Override and return "true" to have features enabled by default.
       false
     end
 
