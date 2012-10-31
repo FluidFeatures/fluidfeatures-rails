@@ -1,8 +1,4 @@
 
-if RUBY_VERSION < "1.9.2"
-  require "pre_ruby192/uri"
-end
-
 require "fluidfeatures/client"
 
 module FluidFeatures
