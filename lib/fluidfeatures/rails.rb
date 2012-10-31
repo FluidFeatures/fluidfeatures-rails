@@ -58,6 +58,8 @@ end
 module ActionController
   class Base
 
+    attr_accessor :ff_transaction
+
     # allow fluidfeature to be called from templates
     helper_method :fluidfeature
 
@@ -87,8 +89,11 @@ module ActionController
       # if no user id given, then attempt to get the unique id of this visitor from the cookie
       user[:id] ||= cookies[:fluidfeatures_anonymous]
 
-      @ff_user = ::FluidFeatures::Rails.ff_app.user(
+      url = "#{request.protocol}#{request.host_with_port}#{request.fullpath}"
+
+      transaction = ::FluidFeatures::Rails.ff_app.user_transaction(
         user[:id],
+        url,
         user[:name],
         !!user[:anonymous],
         user[:uniques],
@@ -96,9 +101,9 @@ module ActionController
       )
 
       # Set/delete cookies for anonymous users
-      if @ff_user.anonymous
+      if transaction.user.anonymous
         # update the cookie, with the unique id of this user
-        cookies[:fluidfeatures_anonymous] = @ff_user.unique_id
+        cookies[:fluidfeatures_anonymous] = transaction.user.unique_id
       else
         # We are no longer an anoymous user. Delete the cookie
         if cookies.has_key? :fluidfeatures_anonymous
@@ -106,11 +111,15 @@ module ActionController
         end
       end
 
-      @ff_user
+      transaction
     end
 
-    def fluidfeatures_user
-      @ff_user ||= fluidfeatures_initialize_user
+    #
+    # Initialize the FluidFeatures state for this request.
+    #
+    def fluidfeatures_request_before
+      @ff_transaction = fluidfeatures_initialize_user
+      @ff_request_start_time = Time.now
     end
 
     #
@@ -130,28 +139,21 @@ module ActionController
       unless ::FluidFeatures::Rails.enabled
         return default_enabled || false
       end
-      fluidfeatures_user.feature_enabled?(feature_name, version_name, default_enabled)
+      ff_transaction.feature_enabled?(feature_name, version_name, default_enabled)
     end
 
     def fluidgoal(goal_name, goal_version_name=nil)
       unless ::FluidFeatures::Rails.enabled
         return default_enabled || false
       end
-      fluidfeatures_user.goal_hit(goal_name, goal_version_name)
-    end
-
-    #
-    # Initialize the FluidFeatures state for this request.
-    #
-    def fluidfeatures_request_before
-      @ff_request_start_time = Time.now
+      ff_transaction.goal_hit(goal_name, goal_version_name)
     end
 
     #
     # Returns the features enabled for this request's user.
     #
     def fluidfeatures_retrieve_user_features
-      fluidfeatures_user.features
+      ff_transaction.features
     end
 
     #
@@ -163,9 +165,7 @@ module ActionController
     # 
     def fluidfeatures_request_after
       request_duration = Time.now - @ff_request_start_time
-      url = "#{request.protocol}#{request.host_with_port}#{request.fullpath}"
-      fluidfeatures_user.end_transaction(
-        url,
+      ff_transaction.end_transaction(
         # stats
         {
           :request => {
