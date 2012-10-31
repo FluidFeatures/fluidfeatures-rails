@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = FluidFeatures::Rails::VERSION
   s.authors     = ["Phil Whelan"]
   s.email       = ["phil@fluidfeatures.com"]
-  s.homepage    = "https://github.com/BigFastSite/fluidfeatures-rails"
+  s.homepage    = "https://github.com/FluidFeatures/fluidfeatures-rails"
   s.summary     = %q{Ruby on Rails client for the FluidFeatures service.}
   s.description = %q{Ruby on Rails client for the FluidFeatures service.}
   s.rubyforge_project = s.name
@@ -15,5 +15,5 @@ Gem::Specification.new do |s|
   #s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.require_paths = ["lib"]
   #s.add_dependency "rails", "~>3.0"
-  s.add_dependency "persistent_http", "~>1.0.3"
+  s.add_dependency "fluidfeatures" unless ENV["FF_DEV"]
 end
