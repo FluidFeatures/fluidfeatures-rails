@@ -15,5 +15,5 @@ Gem::Specification.new do |s|
   #s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.require_paths = ["lib"]
   #s.add_dependency "rails", "~>3.0"
-  s.add_dependency "fluidfeatures" unless ENV["FF_DEV"]
+  s.add_dependency "fluidfeatures", "~>0.4.0" unless ENV["FF_DEV"]
 end
