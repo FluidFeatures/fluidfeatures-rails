@@ -14,7 +14,8 @@ module FluidFeatures
     # It sets up the before and after request hooks
     #
     def self.initializer
-
+      #fixes class variable state persisted between calls
+      @enabled = false
       #
       # Without these FluidFeatures credentials we cannot talk to
       # the FluidFeatures service.

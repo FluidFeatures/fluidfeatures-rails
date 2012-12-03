@@ -1,6 +1,8 @@
 *.gem
 *.swp
 .bundle
+.idea
+/.rvmrc
 Gemfile.lock
 pkg/*
 *.rbc
