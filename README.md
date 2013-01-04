@@ -132,6 +132,7 @@ Start adding your features and goals using `if ff?` (or `if fluidfeature`) and `
 
 In your controllers or your views...
 
+```ruby
     # "theme" is simply an example feature name, used to represent
     # a migration to a styling of your website
     if ff? "theme", "default"
@@ -153,6 +154,7 @@ In your controllers or your views...
     fluidgoal "upgraded-to-pro-account"
 
     fluidgoal "general-engagement"
+```
 
 More info
 ---------
