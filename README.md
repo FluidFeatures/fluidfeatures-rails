@@ -161,7 +161,7 @@ fluidgoal "general-engagement"
 Dashboard
 ---------
 
-If you log into your FluidFeatures account and visit fluidfeatures.com/dashboard you will
+If you log into your FluidFeatures account and visit [fluidfeatures.com/dashboard](https://www.fluidfeatures.com/dashboard) you will see your feature and goal dashboard.
 
 ![Example dashboard view](http://commondatastorage.googleapis.com/philwhln/blog/images/ab-test-rails/full-dashboard.png)
 
