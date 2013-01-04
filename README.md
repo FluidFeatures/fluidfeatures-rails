@@ -158,9 +158,20 @@ fluidgoal "upgraded-to-pro-account"
 fluidgoal "general-engagement"
 ```
 
-More info
+Dashboard
 ---------
 
+If you log into your FluidFeatures account and visit fluidfeatures.com/dashboard you will
+
+![Example dashboard view](http://commondatastorage.googleapis.com/philwhln/blog/images/ab-test-rails/full-dashboard.png)
+
+This shows one features `"ab-test"` with two versions simply named `"a"` and `"b"`.
+
+There are two goals called `"yes"` and `"no"`.
+
+Version `"a"` is seen by 75% of the user-base, whether they are anonymous or not, and version `"b"` is seen by the remaining 25%.
+
+You can read more about this example in a blog post here...
 http://www.bigfastblog.com/ab-testing-in-ruby-on-rails
 
 
