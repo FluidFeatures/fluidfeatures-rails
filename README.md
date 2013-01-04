@@ -1,9 +1,5 @@
 [![Build Status](https://secure.travis-ci.org/FluidFeatures/fluidfeatures-rails.png)](http://travis-ci.org/FluidFeatures/fluidfeatures-rails)
 
-
-fluidfeatures-rails
-===================
-
 Rails client for API of FluidFeatures.com
 
 Feature rollout
@@ -60,41 +56,43 @@ In your `application_controller.rb` you will define a function called `def fluid
 
 This important for FluidFeatures to determine which feature versions to enable for the user, but is also the place where you can define any cohorts you wish to use for rolling out features.
 
-    def fluidfeatures_current_user(verbose)
-      if current_user
-        if verbose
-          {
-            :id => @current_user[:id],
-            :name => @current_user[:name],
-            :uniques => {
-              :twitter => @current_user[:twitter_id]
-            },
-            :cohorts => {
-              # Example attributes for the user.
-              # These can be any fields you wish to select users by.
-              :company  => {
-                # "display" is used to help you find it in the dashboard.
-                # Highly recommended unless you work with ids.
-                # This display name can change over time without consequence. 
-                :display => @current_user[:company_name],
-                # "id" should be unique this this cohort and must be static
-                # over time.
-                :id      => @current_user[:company_id]
-              },
-              # For this boolean cohort "true"|"false" is the "display"
-              # and the "id"
-              :admin    => @current_user[:admin]
-            }
-          }
-        else
-          {
-            :id => @current_user.id
-          }
-        end
-      else
-        nil
-      end
+```ruby
+def fluidfeatures_current_user(verbose)
+  if current_user
+    if verbose
+      {
+        :id => @current_user[:id],
+        :name => @current_user[:name],
+        :uniques => {
+          :twitter => @current_user[:twitter_id]
+        },
+        :cohorts => {
+          # Example attributes for the user.
+          # These can be any fields you wish to select users by.
+          :company  => {
+            # "display" is used to help you find it in the dashboard.
+            # Highly recommended unless you work with ids.
+            # This display name can change over time without consequence. 
+            :display => @current_user[:company_name],
+            # "id" should be unique this this cohort and must be static
+            # over time.
+            :id      => @current_user[:company_id]
+          },
+          # For this boolean cohort "true"|"false" is the "display"
+          # and the "id"
+          :admin    => @current_user[:admin]
+        }
+      }
+    else
+      {
+        :id => @current_user.id
+      }
     end
+  else
+    nil
+  end
+end
+```
 
 The above is an example of `fluidfeatures_current_user` that you might implement. The `verbose` is a boolean that indicates whether all details are required, or just the minimal identifying attributes (unique `:id`). `verbose` is an optimization that will be used at the discretion of `gem fluidfeatures-rails`.
 
@@ -116,15 +114,19 @@ Integration
 
 Add the gem to your application
 
-    gem "fluidfeatures-rails"
+```ruby
+gem "fluidfeatures-rails"
+```
 
 Call the initializer when your application starts
 
-    module MyRailsApp
-      class Application < Rails::Application
-        FluidFeatures::Rails.initializer
-      end
-    end
+```ruby
+module MyRailsApp
+  class Application < Rails::Application
+    FluidFeatures::Rails.initializer
+  end
+end
+```
 
 Create a `fluidfeature_current_user` method in your `ApplicationController`. See above.
 
@@ -133,27 +135,27 @@ Start adding your features and goals using `if ff?` (or `if fluidfeature`) and `
 In your controllers or your views...
 
 ```ruby
-    # "theme" is simply an example feature name, used to represent
-    # a migration to a styling of your website
-    if ff? "theme", "default"
-      # wrap code related to your default theme, so it is
-      # only executed when the user is allocated this version
-      # of the feature "theme".
-    end
-    # Alternate verison of the "theme" feature.
-    # FluidFeatures will only assign a user to one version
-    # of a feature.
-    if ff? "theme", "tropical"
-      # implement code specifically related to your new theme
-    end
+# "theme" is simply an example feature name, used to represent
+# a migration to a styling of your website
+if ff? "theme", "default"
+  # wrap code related to your default theme, so it is
+  # only executed when the user is allocated this version
+  # of the feature "theme".
+end
+# Alternate verison of the "theme" feature.
+# FluidFeatures will only assign a user to one version
+# of a feature.
+if ff? "theme", "tropical"
+  # implement code specifically related to your new theme
+end
 
-    fluidgoal "bought-bieber-dvd"
+fluidgoal "bought-bieber-dvd"
 
-    fluidgoal "added-a-comment"
+fluidgoal "added-a-comment"
 
-    fluidgoal "upgraded-to-pro-account"
+fluidgoal "upgraded-to-pro-account"
 
-    fluidgoal "general-engagement"
+fluidgoal "general-engagement"
 ```
 
 More info
