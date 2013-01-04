@@ -1,14 +1,14 @@
 [![Build Status](https://secure.travis-ci.org/FluidFeatures/fluidfeatures-rails.png)](http://travis-ci.org/FluidFeatures/fluidfeatures-rails)
 
-Rails client for API of FluidFeatures.com
+Graceful feature rollout and simple A/B testing
+===============================================
 
-Feature rollout
----------------
-
-Using `if ff? "foo"` you can easily rollout new code to production and then use the FluidFeatures dashboard to rollout this code to yourself, your team or your users.
+`gem fluidfeatures-rails` is a Ruby on Rails client for the API of FluidFeatures.com, which provides an elegant way to wrap new code so you have real-time control over rolling out new features to your user-base.
 
 Rollout new versions of features
 --------------------------------
+
+Using `if ff? "foo"` you can easily rollout new code to production and then use the FluidFeatures dashboard to rollout this code to yourself, your team or your users.
 
 Use `if ff? "foo", "v2"` to wrap the code for a new version of the "foo" feature.
 
