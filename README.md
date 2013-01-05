@@ -128,7 +128,7 @@ module MyRailsApp
 end
 ```
 
-Create a `fluidfeature_current_user` method in your `ApplicationController`. See above.
+Create a `fluidfeature_current_user` method in your `ApplicationController`. See [User definition and cohorts](#user-definition-and-cohorts).
 
 Start adding your features and goals using `if ff?` (or `if fluidfeature`) and `fluidgoal`.
 
