@@ -1,7 +1,7 @@
 [![Build Status](https://secure.travis-ci.org/FluidFeatures/fluidfeatures-rails.png)](http://travis-ci.org/FluidFeatures/fluidfeatures-rails)
 
-Graceful feature rollout and simple A/B testing
-===============================================
+Rails graceful feature rollout and simple A/B testing
+=====================================================
 
 `gem fluidfeatures-rails` is a Ruby on Rails client for the API of FluidFeatures.com, which provides an elegant way to wrap new code so you have real-time control over rolling out new features to your user-base.
 
