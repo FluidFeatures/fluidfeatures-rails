@@ -1,4 +1,3 @@
-
 require "fluidfeatures"
 
 module FluidFeatures
@@ -20,12 +19,12 @@ module FluidFeatures
       # Without these FluidFeatures credentials we cannot talk to
       # the FluidFeatures service.
       #
-      %w[FLUIDFEATURES_BASEURI FLUIDFEATURES_SECRET FLUIDFEATURES_APPID].each do |key|
-        unless ENV[key]
-          $stderr.puts "!! fluidfeatures-rails requires ENV[\"#{key}\"] (fluidfeatures is disabled)"
-          return
-        end
-      end
+      #%w[FLUIDFEATURES_BASEURI FLUIDFEATURES_SECRET FLUIDFEATURES_APPID].each do |key|
+      #  unless ENV[key]
+      #    $stderr.puts "!! fluidfeatures-rails requires ENV[\"#{key}\"] (fluidfeatures is disabled)"
+      #    return
+      #  end
+      #end
       unless defined? ::Rails
         $stderr.puts "!! fluidfeatures-rails requires rails (fluidfeatures is disabled)"
         return
@@ -34,17 +33,12 @@ module FluidFeatures
 
       ::Rails::Application.initializer "fluidfeatures.initializer" do
         ActiveSupport.on_load(:action_controller) do
-          api_baseuri = ENV["FLUIDFEATURES_BASEURI"]
-          api_appid   = ENV["FLUIDFEATURES_APPID"]
-          api_secret  = ENV["FLUIDFEATURES_SECRET"]
-
-          ::FluidFeatures::Rails.ff_app = ::FluidFeatures.app(
-            api_baseuri,
-            api_appid,
-            api_secret,
-            #::Rails.logger
-          )
-
+          replacements = {}
+          replacements["baseuri"] = ENV["FLUIDFEATURES_BASEURI"] if ENV["FLUIDFEATURES_BASEURI"]
+          replacements["appid"] = ENV["FLUIDFEATURES_APPID"] if ENV["FLUIDFEATURES_APPID"]
+          replacements["secret"] = ENV["FLUIDFEATURES_SECRET"] if ENV["FLUIDFEATURES_SECRET"]
+          config = ::FluidFeatures::Config.new("#{::Rails.root}/config/stormpath.yml", ::Rails.env, replacements)
+          ::FluidFeatures::Rails.ff_app = ::FluidFeatures.app(config)
           ActionController::Base.append_before_filter :fluidfeatures_request_before
           ActionController::Base.append_after_filter  :fluidfeatures_request_after
         end

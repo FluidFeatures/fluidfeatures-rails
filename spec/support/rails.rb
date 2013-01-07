@@ -26,4 +26,9 @@ module Rails
   def self.logger
     @@logger ||= Object.new
   end
+
+  module Generators
+    class Base
+    end
+  end
 end
