@@ -56,7 +56,9 @@ module ActionController
     attr_accessor :ff_transaction
 
     # allow fluidfeature to be called from templates
+    helper_method :ff?
     helper_method :fluidfeature
+    helper_method :fluidgoal
 
     #
     # Here is how we know what your user_id is for the user
