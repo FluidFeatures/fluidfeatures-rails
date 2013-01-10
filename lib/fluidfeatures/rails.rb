@@ -37,7 +37,7 @@ module FluidFeatures
           replacements["baseuri"] = ENV["FLUIDFEATURES_BASEURI"] if ENV["FLUIDFEATURES_BASEURI"]
           replacements["appid"] = ENV["FLUIDFEATURES_APPID"] if ENV["FLUIDFEATURES_APPID"]
           replacements["secret"] = ENV["FLUIDFEATURES_SECRET"] if ENV["FLUIDFEATURES_SECRET"]
-          config = ::FluidFeatures::Config.new("#{::Rails.root}/config/stormpath.yml", ::Rails.env, replacements)
+          config = ::FluidFeatures::Config.new("#{::Rails.root}/config/fluidfeatures.yml", ::Rails.env, replacements)
           ::FluidFeatures::Rails.ff_app = ::FluidFeatures.app(config)
           ActionController::Base.append_before_filter :fluidfeatures_request_before
           ActionController::Base.append_after_filter  :fluidfeatures_request_after
