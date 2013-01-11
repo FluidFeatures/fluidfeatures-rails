@@ -7,44 +7,53 @@ module FluidFeatures
       attr_accessor :enabled
       attr_accessor :ff_app
     end
-    
+
     #
     # This is called once, when your Rails application fires up.
     # It sets up the before and after request hooks
     #
     def self.initializer
-      #fixes class variable state persisted between calls
+
       @enabled = false
-      #
+
       # Without these FluidFeatures credentials we cannot talk to
       # the FluidFeatures service.
-      #
-      #%w[FLUIDFEATURES_BASEURI FLUIDFEATURES_SECRET FLUIDFEATURES_APPID].each do |key|
-      #  unless ENV[key]
-      #    $stderr.puts "!! fluidfeatures-rails requires ENV[\"#{key}\"] (fluidfeatures is disabled)"
-      #    return
-      #  end
-      #end
-      unless defined? ::Rails
-        $stderr.puts "!! fluidfeatures-rails requires rails (fluidfeatures is disabled)"
-        return
+      ff_config_path = "#{::Rails.root}/config/fluidfeatures.yml"
+      unless File.file? ff_config_path
+        %w[FLUIDFEATURES_BASEURI FLUIDFEATURES_SECRET FLUIDFEATURES_APPID].each do |key|
+          unless ENV[key]
+            $stderr.puts "fluidfeatures-rails is not configured. Run 'rails g fluidfeatures:config'"
+            return
+          end
+        end
       end
-      $stderr.puts "=> fluidfeatures-rails initializing as app #{ENV["FLUIDFEATURES_APPID"]} with #{ENV["FLUIDFEATURES_BASEURI"]}"
 
+      if File.file? ff_config_path
+        config = ::FluidFeatures::Config.new(ff_config_path, ::Rails.env)
+      else
+        config = ::FluidFeatures::Config.new({
+          "base_uri" => ENV["FLUIDFEATURES_BASEURI"],
+          "app_id"   => ENV["FLUIDFEATURES_APPID"],
+          "secret"  => ENV["FLUIDFEATURES_SECRET"]
+        })
+      end
+
+      # create FF app store in global rails namespace
+      ::FluidFeatures::Rails.ff_app = ::FluidFeatures.app(config)
+
+      # Initialize
       ::Rails::Application.initializer "fluidfeatures.initializer" do
         ActiveSupport.on_load(:action_controller) do
-          replacements = {}
-          replacements["baseuri"] = ENV["FLUIDFEATURES_BASEURI"] if ENV["FLUIDFEATURES_BASEURI"]
-          replacements["appid"] = ENV["FLUIDFEATURES_APPID"] if ENV["FLUIDFEATURES_APPID"]
-          replacements["secret"] = ENV["FLUIDFEATURES_SECRET"] if ENV["FLUIDFEATURES_SECRET"]
-          config = ::FluidFeatures::Config.new("#{::Rails.root}/config/fluidfeatures.yml", ::Rails.env, replacements)
-          ::FluidFeatures::Rails.ff_app = ::FluidFeatures.app(config)
+
+          # wrap each request in fluidfeatures user transaction
           ActionController::Base.append_before_filter :fluidfeatures_request_before
           ActionController::Base.append_after_filter  :fluidfeatures_request_after
+
         end
       end
 
       @enabled = true
+
     end
 
   end
@@ -163,7 +172,7 @@ module ActionController
     # feature.
     # This helps the FluidFeatures database prepopulate the feature set
     # without requiring the developer to do it manually.
-    # 
+    #
     def fluidfeatures_request_after
       ff_transaction.end_transaction
     end
