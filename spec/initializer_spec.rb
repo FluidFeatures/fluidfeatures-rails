@@ -10,7 +10,6 @@ describe "FluidFeatures Rails initialization" do
 
   it "should start application if Rails defined" do
     defined?(Rails).should be_true
-    $stderr.should_receive(:puts).with("=> fluidfeatures-rails initializing as app #{ENV["FLUIDFEATURES_APPID"]} with #{ENV["FLUIDFEATURES_BASEURI"]}")
     FluidFeatures::Rails.initializer
     FluidFeatures::Rails.enabled.should be_true
   end

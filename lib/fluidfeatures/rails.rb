@@ -16,34 +16,38 @@ module FluidFeatures
 
       @enabled = false
 
-      # Without these FluidFeatures credentials we cannot talk to
-      # the FluidFeatures service.
-      ff_config_path = "#{::Rails.root}/config/fluidfeatures.yml"
-      unless File.file? ff_config_path
-        %w[FLUIDFEATURES_BASEURI FLUIDFEATURES_SECRET FLUIDFEATURES_APPID].each do |key|
-          unless ENV[key]
-            $stderr.puts "fluidfeatures-rails is not configured. Run 'rails g fluidfeatures:config'"
-            return
-          end
-        end
-      end
-
-      if File.file? ff_config_path
-        config = ::FluidFeatures::Config.new(ff_config_path, ::Rails.env)
-      else
-        config = ::FluidFeatures::Config.new({
-          "base_uri" => ENV["FLUIDFEATURES_BASEURI"],
-          "app_id"   => ENV["FLUIDFEATURES_APPID"],
-          "secret"  => ENV["FLUIDFEATURES_SECRET"]
-        })
-      end
-
-      # create FF app store in global rails namespace
-      ::FluidFeatures::Rails.ff_app = ::FluidFeatures.app(config)
-
       # Initialize
       ::Rails::Application.initializer "fluidfeatures.initializer" do
         ActiveSupport.on_load(:action_controller) do
+
+          # Without these FluidFeatures credentials we cannot talk to
+          # the FluidFeatures service.
+          is_configured = true
+          ff_config_path = "#{::Rails.root}/config/fluidfeatures.yml"
+          unless File.file? ff_config_path
+            %w[FLUIDFEATURES_BASEURI FLUIDFEATURES_SECRET FLUIDFEATURES_APPID].each do |key|
+              is_configured &= ENV[key]
+            end
+          end
+          unless is_configured
+            $stderr.puts "fluidfeatures-rails is not configured. Run 'rails g fluidfeatures:config'"
+            break
+          end
+
+          if File.file? ff_config_path
+            config = ::FluidFeatures::Config.new(ff_config_path, ::Rails.env)
+          else
+            config = ::FluidFeatures::Config.new({
+              "base_uri" => ENV["FLUIDFEATURES_BASEURI"],
+              "app_id"   => ENV["FLUIDFEATURES_APPID"],
+              "secret"   => ENV["FLUIDFEATURES_SECRET"]
+            })
+          end
+
+          $stderr.puts "fluidfeatures-rails is configured with app_id '#{config["app_id"]}'. Run 'rails g fluidfeatures:config' to update config"
+
+          # create FF app store in global rails namespace
+          ::FluidFeatures::Rails.ff_app = ::FluidFeatures.app(config)
 
           # wrap each request in fluidfeatures user transaction
           ActionController::Base.append_before_filter :fluidfeatures_request_before
