@@ -20,7 +20,7 @@ Add this line to your `config/application.rb`
 FluidFeatures::Rails.initializer
 ```
 
-Add this `fluidfeature_current_user` method in your `ApplicationController`, where `current_user` returns your current user object.
+Add this `fluidfeature_current_user` method in your `ApplicationController`, where `current_user` returns your currently logged in user object.
 See [User definition and cohorts](#user-definition-and-cohorts) for more details.
 
 ```ruby
@@ -29,7 +29,7 @@ def fluidfeatures_current_user(verbose=false)
 end
 ```
 
-Generate a fluidfeatures.yml config file by running
+Generate a `config/fluidfeatures.yml` config file by running
 
 `rails g fluidfeatures:config`
 
@@ -71,7 +71,7 @@ If you log into your FluidFeatures account and visit [fluidfeatures.com/dashboar
 
 ![Example dashboard view](http://commondatastorage.googleapis.com/philwhln/blog/images/ab-test-rails/full-dashboard.png)
 
-This shows one features `"ab-test"` with two versions simply named `"a"` and `"b"`.
+This shows one feature `"ab-test"` with two versions simply named `"a"` and `"b"`.
 
 There are two goals called `"yes"` and `"no"`.
 
