@@ -5,6 +5,82 @@ Rails graceful feature rollout and simple A/B testing
 
 `gem fluidfeatures-rails` is a Ruby on Rails client for the API of FluidFeatures.com, which provides an elegant way to wrap new code so you have real-time control over rolling out new features to your user-base.
 
+Integration
+-----------
+
+Add the gem to your application's `Gemfile` and run `bundle update fluidfeatures-rails`
+
+```ruby
+gem "fluidfeatures-rails"
+```
+
+Add this line to your `config/application.rb`
+
+```ruby
+FluidFeatures::Rails.initializer
+```
+
+Add this `fluidfeature_current_user` method in your `ApplicationController`, where `current_user` returns your current user object.
+See [User definition and cohorts](#user-definition-and-cohorts) for more details.
+
+```ruby
+def fluidfeatures_current_user(verbose=false)
+  current_user ? { :id => current_user.id } : nil
+end
+```
+
+Generate a fluidfeatures.yml config file by running
+
+`rails g fluidfeatures:config`
+
+This will prompt you for your app credentials which you can find on the [fluidfeatures.com/dashboard](https://www.fluidfeatures.com/dashboard) and are specific to each app you create.
+Enter your `app_id` and `secret` for your `development` environment. You can skip the rest for now.
+
+Start adding your features and goals using `if ff?` (or `if fluidfeature`) and `fluidgoal`.
+
+In your controllers or your views...
+
+```ruby
+# "theme" is simply an example feature name, used to represent
+# a migration to a styling of your website
+if ff? "theme", "default"
+  # wrap code related to your default theme, so it is
+  # only executed when the user is allocated this version
+  # of the feature "theme".
+end
+# Alternate verison of the "theme" feature.
+# FluidFeatures will only assign a user to one version
+# of a feature.
+if ff? "theme", "tropical"
+  # implement code specifically related to your new theme
+end
+
+fluidgoal "bought-bieber-dvd"
+
+fluidgoal "added-a-comment"
+
+fluidgoal "upgraded-to-pro-account"
+
+fluidgoal "general-engagement"
+```
+
+Dashboard
+---------
+
+If you log into your FluidFeatures account and visit [fluidfeatures.com/dashboard](https://www.fluidfeatures.com/dashboard) you will see your feature and goal dashboard.
+
+![Example dashboard view](http://commondatastorage.googleapis.com/philwhln/blog/images/ab-test-rails/full-dashboard.png)
+
+This shows one features `"ab-test"` with two versions simply named `"a"` and `"b"`.
+
+There are two goals called `"yes"` and `"no"`.
+
+Version `"a"` is seen by 75% of the user-base, whether they are anonymous or not, and version `"b"` is seen by the remaining 25%.
+
+You can read more about this example in a blog post here...
+http://www.bigfastblog.com/ab-testing-in-ruby-on-rails
+
+
 Rollout new versions of features
 --------------------------------
 
@@ -12,7 +88,7 @@ Using `if ff? "foo"` you can easily rollout new code to production and then use 
 
 Use `if ff? "foo", "v2"` to wrap the code for a new version of the "foo" feature.
 
-`if ff? "foo"` defaults to version `"default"`, so anyone seeing "v2" will not also see "v2". This is a great way to test new features in production.
+`if ff? "foo"` defaults to version `"default"`, so anyone seeing "v2" will not also see "default". This is a great way to test new features in production.
 
 Once you have moved all your users over to the newer "v2" version you can factor out code from the older version.
 
@@ -39,15 +115,15 @@ You can define any number of versions for a feature and track them all.
 
 You can also compare the performance of different features against each other over time.
 
-On your server
---------------
+In your controllers
+-------------------
 
 A/B testing on the server gives you the ability to test things at all levels of your stack. Test alternate SQL statements, different versions of emails sent to users, or different backend 3rd party API services.
 
-In your templates
------------------
+In your views
+-------------
 
-fluidfeatures-rails exposes `def ff?` (alias to `def fluidfeature`) and `def fluidgoal` to your templates, so can also wrap versioned code there.
+fluidfeatures-rails exposes `def ff?` (alias to `def fluidfeature`) and `def fluidgoal` to your views, so can also wrap versioned code there.
 
 User definition and cohorts
 ---------------------------
@@ -108,70 +184,4 @@ Anonymous users
 If your `ApplicationController` method `fluidfeatures_current_user` returns `nil` fluidfeatures-rails assumes that your user is anonymous and it will set a cookie in the user's browser. The cookie enables FluidFeatures to provide a consistent experience for that anonymous user. This is mostly important when you have feature versions enabled on a percentage of random users, when two anonymous user may have different features shown to them, depending on which percentage they random fall into.
 
 It is possible handle anonymous users yourself by managing the cookies yourself, generating a unique `:id` for each anonymous user and additionally passing `:anonymous => true` in the `Hash` of `fluidfeatures_current_user` for both verbose and non-verbose calls. This basically what `gem fluidfeatures-rails` does under the hood for your convenience, so you do not have to.
-
-Integration
------------
-
-Add the gem to your application
-
-```ruby
-gem "fluidfeatures-rails"
-```
-
-Call the initializer when your application starts
-
-```ruby
-module MyRailsApp
-  class Application < Rails::Application
-    FluidFeatures::Rails.initializer
-  end
-end
-```
-
-Create a `fluidfeature_current_user` method in your `ApplicationController`. See [User definition and cohorts](#user-definition-and-cohorts).
-
-Start adding your features and goals using `if ff?` (or `if fluidfeature`) and `fluidgoal`.
-
-In your controllers or your views...
-
-```ruby
-# "theme" is simply an example feature name, used to represent
-# a migration to a styling of your website
-if ff? "theme", "default"
-  # wrap code related to your default theme, so it is
-  # only executed when the user is allocated this version
-  # of the feature "theme".
-end
-# Alternate verison of the "theme" feature.
-# FluidFeatures will only assign a user to one version
-# of a feature.
-if ff? "theme", "tropical"
-  # implement code specifically related to your new theme
-end
-
-fluidgoal "bought-bieber-dvd"
-
-fluidgoal "added-a-comment"
-
-fluidgoal "upgraded-to-pro-account"
-
-fluidgoal "general-engagement"
-```
-
-Dashboard
----------
-
-If you log into your FluidFeatures account and visit [fluidfeatures.com/dashboard](https://www.fluidfeatures.com/dashboard) you will see your feature and goal dashboard.
-
-![Example dashboard view](http://commondatastorage.googleapis.com/philwhln/blog/images/ab-test-rails/full-dashboard.png)
-
-This shows one features `"ab-test"` with two versions simply named `"a"` and `"b"`.
-
-There are two goals called `"yes"` and `"no"`.
-
-Version `"a"` is seen by 75% of the user-base, whether they are anonymous or not, and version `"b"` is seen by the remaining 25%.
-
-You can read more about this example in a blog post here...
-http://www.bigfastblog.com/ab-testing-in-ruby-on-rails
-
 
