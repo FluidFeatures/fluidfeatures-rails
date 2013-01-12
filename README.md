@@ -20,7 +20,7 @@ Add this line to your `config/application.rb`
 FluidFeatures::Rails.initializer
 ```
 
-Add this `fluidfeature_current_user` method in your `ApplicationController`, where `current_user` returns your currently logged in user object.
+Add this `fluidfeature_current_user` method in your `ApplicationController` (`app/controllers/application_controller.rb`), where `current_user` returns your currently logged in user object.
 See [User definition and cohorts](#user-definition-and-cohorts) for more details.
 
 ```ruby
@@ -128,9 +128,7 @@ fluidfeatures-rails exposes `def ff?` (alias to `def fluidfeature`) and `def flu
 User definition and cohorts
 ---------------------------
 
-In your `application_controller.rb` you will define a function called `def fluidfeatures_current_user` which can be called by `gem fluidfeatures-rails` to determine who the current user is.
-
-This important for FluidFeatures to determine which feature versions to enable for the user, but is also the place where you can define any cohorts you wish to use for rolling out features.
+In your `app/controllers/application_controller.rb` you will define a function called `def fluidfeatures_current_user` which will be called by fluidfeatures to determine who the current user is, what their name is and which cohorts they belong to. Cohorts can then be used for rolling out specific versions of features. All the details you add here are searchable within the dashboard, so the more fields you add here, the easier it is to find your users.
 
 ```ruby
 def fluidfeatures_current_user(verbose)
