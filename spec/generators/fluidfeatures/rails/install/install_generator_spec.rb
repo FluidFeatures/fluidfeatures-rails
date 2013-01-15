@@ -1,5 +1,5 @@
 require "spec_helper"
-require "generators/fluidfeatures/rails/install/install_generator"
+require "generators/fluid_features/rails/install/install_generator"
 
 describe FluidFeatures::Rails::Generators::InstallGenerator do
   it "creates a configuration file" do
