@@ -1,4 +1,4 @@
-[![Build Status](https://secure.travis-ci.org/FluidFeatures/fluidfeatures-rails.png)](http://travis-ci.org/FluidFeatures/fluidfeatures-rails)
+[![Build Status](https://secure.travis-ci.org/FluidFeatures/fluidfeatures-rails.png)](http://travis-ci.org/FluidFeatures/fluidfeatures-rails) [![Gem Version](https://badge.fury.io/rb/fluidfeatures-rails.png)](http://badge.fury.io/rb/fluidfeatures-rails)
 
 Rails graceful feature rollout and simple A/B testing
 =====================================================
