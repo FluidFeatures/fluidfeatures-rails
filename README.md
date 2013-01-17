@@ -20,7 +20,7 @@ Add this line to your `config/application.rb`
 FluidFeatures::Rails.initializer
 ```
 
-Add this `fluidfeature_current_user` method in your `ApplicationController` (`app/controllers/application_controller.rb`), where `current_user` returns your currently logged in user object.
+Add this `fluidfeatures_current_user` method in your `ApplicationController` (`app/controllers/application_controller.rb`), where `current_user` returns your currently logged in user object.
 See [User definition and cohorts](#user-definition-and-cohorts) for more details.
 
 ```ruby
