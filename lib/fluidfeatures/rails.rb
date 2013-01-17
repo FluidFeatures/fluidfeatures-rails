@@ -84,13 +84,12 @@ module ActionController
       # call app defined method "fluidfeatures_current_user"
       user = nil
       begin
-        user = fluidfeatures_current_user(verbose=true)
+        user = fluidfeatures_current_user(verbose=true) || {}
       rescue NoMethodError
-        ::Rails.logger.error "[FF] Method fluidfeatures_current_user is not defined in your ApplicationController"
-        return nil
+        raise FFeaturesException.new("Method fluidfeatures_current_user is not defined in your ApplicationController")
       end
       unless user.is_a? Hash
-        raise "fluidfeatures_current_user returned invalid user (Hash expected) : #{user}"
+        raise FFeaturesException.new("fluidfeatures_current_user returned invalid user (Hash or nil expected) : #{user}")
       end
 
       # default to anonymous is no user id given
