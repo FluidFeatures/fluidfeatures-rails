@@ -44,10 +44,10 @@ describe "FluidFeatures controller extensions" do
       FluidFeatures::Rails.ff_app.stub!(:user_transaction).and_return(transaction)
     end
 
-    it "should log error if not #fluidfeature_current_user defined" do
+    it "should raise exception unless #fluidfeatures_current_user is defined" do
       controller.unstub!(:fluidfeatures_current_user)
-      Rails.logger.should_receive(:error).with("[FF] Method fluidfeatures_current_user is not defined in your ApplicationController")
-      controller.fluidfeatures_initialize_user.should == nil
+      expect { controller.fluidfeatures_initialize_user }
+        .to raise_error(FFeaturesException, /fluidfeatures_current_user is not defined/)
     end
 
     it "should get user id from cookies if not set" do
