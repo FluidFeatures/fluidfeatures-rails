@@ -1,4 +1,4 @@
-*IMPORTANT: This service no longer exists*
+**IMPORTANT: This service no longer exists**
 
 [![Build Status](https://secure.travis-ci.org/FluidFeatures/fluidfeatures-rails.png)](http://travis-ci.org/FluidFeatures/fluidfeatures-rails) [![Gem Version](https://badge.fury.io/rb/fluidfeatures-rails.png)](http://badge.fury.io/rb/fluidfeatures-rails)
 
